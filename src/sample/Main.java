@@ -1,9 +1,11 @@
 package sample;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -21,7 +23,20 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-public class Main extends Application {
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Scanner;
+
+import java.io.IOException;
+import java.net.Socket;
+import java.net.URL;
+import java.util.ResourceBundle;
+import java.util.Scanner;
+
+public class Main extends Application implements Initializable {
 
     final double DEFAULT_SCENE_WIDTH = 800;
     final double DEFAULT_SCENE_HEIGHT = 600;
@@ -33,9 +48,26 @@ public class Main extends Application {
     GraphicsContext gc;
     Canvas canvas;
 
+    //The server creation
+
+
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        System.out.println("initializing the window from the server");
+        Server myServer = new Server();
+        myServer.setConnection();
+        Scanner ipScanner = new Scanner(System.in);
+
+    }
+
     @Override
     public void start(Stage primaryStage) throws Exception{//receives the first stage from javafx
-        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+        System.out.println("initializing the window from the server");
+
+
+        Scanner ipScanner = new Scanner(System.in);
+
+//        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
         primaryStage.setTitle("Hello World");
 
         //we're using a grid layout
@@ -52,7 +84,7 @@ public class Main extends Application {
         grid.add(sceneTitle, 0, 0);//1. column, 2. row
         //grid.add(sceneTitle, 0, 0, 2, 1);
 
-        Button button = new Button("Sample paint button");
+        Button button = new Button("Accept connection");
         HBox hbButton = new HBox(10);
         hbButton.setAlignment(Pos.TOP_LEFT);
         hbButton.getChildren().add(button);
@@ -62,9 +94,14 @@ public class Main extends Application {
         button.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent e) {
-                System.out.println("I can switch to another scene here ...");
+                System.out.println("I can accept a connection from another painter here ...");
 //                primaryStage.setScene(loginScene);
-                startSecondStage();//call the start second stage
+                //startSecondStage();//call the start second stage
+                Server myServer = new Server(gc);
+                //myServer.setConnection();//start this into a thread rather than this way//commented because the method don't need to be called twice
+//                ConnectionHandler myHandler = new ConnectionHandler(clientSocket, gc);//use these for the server itself
+                Thread handlingThread = new Thread(myServer);
+                handlingThread.start();
             }
         });
 
@@ -76,14 +113,15 @@ public class Main extends Application {
         gc.setStroke(Color.BLUE);
         gc.setStroke(Color.color(Math.random(), Math.random(), Math.random()));
         gc.setLineWidth(5);
-
+        //Platform.runLater(new RunnableGC(gc));
         canvas.setOnMouseMoved(new EventHandler<MouseEvent>() {
 
             @Override
             public void handle(MouseEvent e) {
 //                System.out.println("x: " + e.getX() + ", y: " + e.getY());
                 if(toggleDraw == true) {
-                    gc.strokeOval(e.getX(), e.getY(), strokeSize, strokeSize);
+                    gc.strokeOval(e.getX(), e.getY(), strokeSize, strokeSize);//Platform.runLater(new RunnableGC(gc, stroke));
+
                     xVal = e.getX();
                     yVal = e.getY();
                 }
@@ -101,6 +139,7 @@ public class Main extends Application {
                 if(event.getCode().getName().equals("A"))
                 {
                     gc.setStroke(Color.color(Math.random(), Math.random(), Math.random()));
+                    //gc.setStroke(Color.);
 
                 }
                 if(event.getCode().getName().equals("D"))
@@ -137,6 +176,9 @@ public class Main extends Application {
         primaryStage.setScene(defaultScene);
         primaryStage.show();
     }
+
+//    1. Allow the user to enter the IP address of a "friend" and to connect to that friend
+//    2. If user A is connected to their friend, user B, then whatever user A is drawing on their screen should also draw on user B's screen
 
     //start second stage method to be added
     public void startSecondStage() {//serialize over a server socket for the weekend assignment. We are initiating the connection from the client to the server(starting screen is )
@@ -204,15 +246,8 @@ public class Main extends Application {
         System.out.println("About to show the second stage");
 
         secondaryStage.show();
-//        while(true) {
-//            if (toggleDraw == true) {
-//                //gc.strokeOval(e.getX(), e.getY(), strokeSize, strokeSize);
-//                gcTwo.strokeOval(xVal, yVal, strokeSize, strokeSize);
-//            }
-//        }
+
     }
-
-
 
     public static void main(String[] args) {
         launch(args);
